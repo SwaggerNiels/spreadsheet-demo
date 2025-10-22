@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OECT Model Visualization</title>
+  
+  <!-- Plotly.js for plotting -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 40px;
+      background: #f9f9f9;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 10px;
+    }
+
+    .model-info {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .model-info h2 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .info-label {
+      font-weight: bold;
+      color: #555;
+    }
+
+    .equation-box {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 15px;
+      font-family: 'Courier New', monospace;
+      border-left: 4px solid #3498db;
+    }
+
+    #plot {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .param-group {
+      display: inline-block;
+      margin-right: 20px;
+      margin-bottom: 10px;
+    }
+
+    .param-group label {
+      display: inline-block;
+      width: 120px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    .param-group input {
+      width: 100px;
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-right: 10px;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    .back-btn {
+      background: #95a5a6;
+    }
+
+    .back-btn:hover {
+      background: #7f8c8d;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📈 OECT Model Transfer Curve</h1>
+  
+  <div class="model-info" id="modelInfo">
+    <h2 id="modelTitle">Loading...</h2>
+    <div class="info-grid" id="infoGrid"></div>
+    <div class="equation-box" id="equationBox"></div>
+  </div>
+
+  <div class="controls" id="controlsPanel">
+    <h3>Parameters</h3>
+    <div id="parametersContainer"></div>
+    <button onclick="updatePlot()">Update Plot</button>
+    <button class="back-btn" onclick="window.location.href='index.html'">Back to Table</button>
+  </div>
+
+  <div id="plot"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCmhO83wjFUkJbnApx6WpVhK6wcuBf8iKA",
+      authDomain: "oect-models.firebaseapp.com",
+      databaseURL: "https://oect-models-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "oect-models",
+      storageBucket: "oect-models.firebasestorage.app",
+      messagingSenderId: "130635345091",
+      appId: "1:130635345091:web:e42b4ea17a5b8873b24676",
+      measurementId: "G-8P0HBKVY00"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Get selected row from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const rowIndex = parseInt(urlParams.get('row'));
+
+    if (isNaN(rowIndex)) {
+      document.getElementById('modelTitle').textContent = 'No model selected';
+      document.getElementById('equationBox').textContent = 'Please select a model from the main table.';
+    } else {
+      loadModelData(rowIndex);
+    }
+
+    function loadModelData(rowIndex) {
+      const dataRef = ref(db, 'sheetData');
+      
+      onValue(dataRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          if (rowIndex < data.length) {
+            const row = data[rowIndex];
+            displayModelInfo(row);
+            loadEquation(row);
+          }
+        }
+      });
+    }
+
+    function displayModelInfo(row) {
+      const [author, year, link, pizza, done, empty, review, modelable, modelBase, spatial, temporal, form] = row;
+      
+      document.getElementById('modelTitle').textContent = `${author} (${year})`;
+      
+      const infoGrid = document.getElementById('infoGrid');
+      infoGrid.innerHTML = `
+        <div class="info-label">Model Base:</div>
+        <div>${modelBase || 'N/A'}</div>
+        <div class="info-label">Spatial:</div>
+        <div>${spatial || 'N/A'}</div>
+        <div class="info-label">Temporal:</div>
+        <div>${temporal || 'N/A'}</div>
+        <div class="info-label">Form:</div>
+        <div>${form || 'N/A'}</div>
+      `;
+    }
+
+    function loadEquation(row) {
+      const author = row[0];
+      const year = row[1];
+      
+      // Load equation from database
+      const equationRef = ref(db, `equations/${author}_${year}`);
+      
+      onValue(equationRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const eqData = snapshot.val();
+          displayEquation(eqData);
+          createParameterControls(eqData.parameters);
+          window.currentEquation = eqData;
+          updatePlot();
+        } else {
+          document.getElementById('equationBox').innerHTML = 
+            '<em>No governing equation available for this model yet.</em>';
+          document.getElementById('parametersContainer').innerHTML = 
+            '<em>No parameters defined.</em>';
+        }
+      });
+    }
+
+    function displayEquation(eqData) {
+      document.getElementById('equationBox').innerHTML = `
+        <strong>Governing Equation:</strong><br/>
+        <div style="margin-top: 10px; font-size: 1.1em;">${eqData.equation}</div>
+        ${eqData.description ? `<div style="margin-top: 10px; font-family: system-ui;"><em>${eqData.description}</em></div>` : ''}
+      `;
+    }
+
+    function createParameterControls(parameters) {
+      const container = document.getElementById('parametersContainer');
+      container.innerHTML = '';
+      
+      for (const [key, value] of Object.entries(parameters)) {
+        const paramGroup = document.createElement('div');
+        paramGroup.className = 'param-group';
+        paramGroup.innerHTML = `
+          <label for="param_${key}">${value.label}:</label>
+          <input type="number" id="param_${key}" value="${value.default}" step="${value.step || 0.01}">
+          <span style="color: #777; margin-left: 5px;">${value.unit || ''}</span>
+        `;
+        container.appendChild(paramGroup);
+      }
+    }
+
+    window.updatePlot = function() {
+      if (!window.currentEquation) return;
+      
+      const params = {};
+      for (const key in window.currentEquation.parameters) {
+        const input = document.getElementById(`param_${key}`);
+        if (input) {
+          params[key] = parseFloat(input.value);
+        }
+      }
+      
+      // Generate voltage range
+      const VG = [];
+      for (let v = window.currentEquation.VG_range[0]; v <= window.currentEquation.VG_range[1]; v += 0.1) {
+        VG.push(v);
+      }
+      
+      // Calculate drain current using the equation function
+      const ID = VG.map(vg => window.currentEquation.func(vg, params));
+      
+      // Create plot
+      const trace = {
+        x: VG,
+        y: ID,
+        type: 'scatter',
+        mode: 'lines',
+        line: { color: '#3498db', width: 2 },
+        name: 'ID vs VG'
+      };
+      
+      const layout = {
+        title: 'Transfer Curve',
+        xaxis: { 
+          title: 'Gate Voltage VG (V)',
+          gridcolor: '#e0e0e0'
+        },
+        yaxis: { 
+          title: 'Drain Current ID (A)',
+          gridcolor: '#e0e0e0'
+        },
+        plot_bgcolor: '#fafafa',
+        paper_bgcolor: 'white',
+        margin: { t: 50, r: 50, b: 50, l: 70 }
+      };
+      
+      Plotly.newPlot('plot', [trace], layout, { responsive: true });
+    };
+
+  </script>
+
+</body>
+</html>

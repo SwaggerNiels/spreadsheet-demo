@@ -9,6 +9,8 @@ import {
 export function setupSpreadsheet(db) {
   const container = document.getElementById('sheet');
   const statusEl = document.getElementById('status');
+  const illustrateBtn = document.getElementById('illustrateBtn');
+  let selectedRow = null;
 
   // Example starting data
   const data = [
@@ -85,6 +87,21 @@ export function setupSpreadsheet(db) {
     contextMenu: true,
     filters: true,
     licenseKey: 'non-commercial-and-evaluation'
+  });
+
+  // Handle row selection
+  hot.addHook('afterSelectionEnd', (row, column, row2, column2) => {
+    if (row > 0) { // Skip header row
+      selectedRow = row;
+      illustrateBtn.disabled = false;
+    }
+  });
+
+  // Handle illustrate button click
+  illustrateBtn.addEventListener('click', () => {
+    if (selectedRow !== null) {
+      window.location.href = `visualize.html?row=${selectedRow}`;
+    }
   });
 
   // Firebase reference

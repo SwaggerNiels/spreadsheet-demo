@@ -20,6 +20,30 @@
       margin-bottom: 20px;
     }
 
+    #controls {
+      margin-bottom: 15px;
+    }
+
+    #illustrateBtn {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #illustrateBtn:hover {
+      background: #2980b9;
+    }
+
+    #illustrateBtn:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+    }
+
     #sheet {
       width: 900px; /* Adjust width as needed */
       margin-top: 10px;
@@ -42,6 +66,9 @@
 <body>
 
   <h1>📊 OECT-Model Overview</h1>
+  <div id="controls">
+    <button id="illustrateBtn" disabled>Illustrate Model</button>
+  </div>
   <div id="sheet"></div>
   <div id="status">Connecting...</div>
   

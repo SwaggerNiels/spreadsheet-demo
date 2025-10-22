@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Initialize Equations</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 40px;
+      background: #f9f9f9;
+    }
+    .status {
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    #log {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Initialize OECT Model Equations</h1>
+  <div class="status">
+    <p>Click the button below to initialize the governing equations for the OECT models in the database.</p>
+    <button onclick="initializeEquations()">Initialize Equations</button>
+    <div id="log"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCmhO83wjFUkJbnApx6WpVhK6wcuBf8iKA",
+      authDomain: "oect-models.firebaseapp.com",
+      databaseURL: "https://oect-models-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "oect-models",
+      storageBucket: "oect-models.firebasestorage.app",
+      messagingSenderId: "130635345091",
+      appId: "1:130635345091:web:e42b4ea17a5b8873b24676",
+      measurementId: "G-8P0HBKVY00"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.initializeEquations = async function() {
+      const logEl = document.getElementById('log');
+      logEl.innerHTML = 'Initializing equations...<br/>';
+
+      // Robinson 2006 - Electrochemistry model (Steady State)
+      const robinson_2006 = {
+        equation: "ID = (W/L) * μ * Ci * d * VD * (VG - VT - VD/2)",
+        description: "Steady-state current saturation model based on electrochemical doping",
+        parameters: {
+          W: { label: "Width", default: 100, unit: "μm", step: 10 },
+          L: { label: "Length", default: 10, unit: "μm", step: 1 },
+          mu: { label: "Mobility μ", default: 1.0, unit: "cm²/Vs", step: 0.1 },
+          Ci: { label: "Capacitance Ci", default: 10, unit: "F/m²", step: 1 },
+          d: { label: "Thickness d", default: 100, unit: "nm", step: 10 },
+          VD: { label: "Drain Voltage VD", default: -0.6, unit: "V", step: 0.1 },
+          VT: { label: "Threshold VT", default: 0.2, unit: "V", step: 0.1 }
+        },
+        VG_range: [-0.8, 0.2],
+        func: function(VG, p) {
+          // Convert units: W, L, d from μm/nm to m, Ci in F/m², mu in m²/Vs
+          const W_m = p.W * 1e-6;
+          const L_m = p.L * 1e-6;
+          const d_m = p.d * 1e-9;
+          const mu_m2Vs = p.mu * 1e-4; // cm²/Vs to m²/Vs
+          
+          const ID = (W_m / L_m) * mu_m2Vs * p.Ci * d_m * p.VD * (VG - p.VT - p.VD / 2);
+          return Math.abs(ID); // Return absolute value for plotting
+        }
+      };
+
+      // Bernards 2007 - Transistor device physics (Steady State and Transient)
+      const bernards_2007 = {
+        equation: "ID = (W*d/L) * μ * Ci * [(VG - VT)*VD - VD²/2]",
+        description: "Gradual channel approximation model for OECT in linear and saturation regimes",
+        parameters: {
+          W: { label: "Width", default: 100, unit: "μm", step: 10 },
+          L: { label: "Length", default: 10, unit: "μm", step: 1 },
+          d: { label: "Thickness", default: 100, unit: "nm", step: 10 },
+          mu: { label: "Mobility μ", default: 1.5, unit: "cm²/Vs", step: 0.1 },
+          Ci: { label: "Capacitance Ci", default: 15, unit: "F/m²", step: 1 },
+          VD: { label: "Drain Voltage VD", default: -0.6, unit: "V", step: 0.1 },
+          VT: { label: "Threshold VT", default: 0.3, unit: "V", step: 0.1 }
+        },
+        VG_range: [-0.8, 0.4],
+        func: function(VG, p) {
+          // Convert units
+          const W_m = p.W * 1e-6;
+          const L_m = p.L * 1e-6;
+          const d_m = p.d * 1e-9;
+          const mu_m2Vs = p.mu * 1e-4;
+          
+          const ID = (W_m * d_m / L_m) * mu_m2Vs * p.Ci * ((VG - p.VT) * p.VD - p.VD * p.VD / 2);
+          return Math.abs(ID);
+        }
+      };
+
+      try {
+        await set(ref(db, 'equations/Robinson_2006'), robinson_2006);
+        logEl.innerHTML += '✓ Robinson 2006 equation initialized<br/>';
+        
+        await set(ref(db, 'equations/Bernards_2007'), bernards_2007);
+        logEl.innerHTML += '✓ Bernards 2007 equation initialized<br/>';
+        
+        logEl.innerHTML += '<br/><strong style="color: green;">All equations initialized successfully!</strong>';
+      } catch (error) {
+        logEl.innerHTML += `<br/><strong style="color: red;">Error: ${error.message}</strong>`;
+      }
+    };
+  </script>
+</body>
+</html>
