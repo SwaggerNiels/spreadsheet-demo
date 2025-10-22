@@ -9,10 +9,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.js"></script>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js"></script>
-
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -23,22 +19,31 @@
       width: 800px;
       margin: auto;
     }
+    #status {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #333;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      opacity: 0.85;
+    }
   </style>
 </head>
 <body>
 
   <h1>📊 Interactive Spreadsheet (Synced via Firebase)</h1>
   <div id="sheet"></div>
+  <div id="status">Connecting...</div>
 
   <script type="module">
-    // Import the functions you need from the SDKs you need
+    // ✅ Import Firebase modular SDK
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
-  
-    // Your web app's Firebase configuration
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+
+    // 🔑 Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCmhO83wjFUkJbnApx6WpVhK6wcuBf8iKA",
       authDomain: "oect-models.firebaseapp.com",
@@ -49,15 +54,15 @@
       appId: "1:130635345091:web:e42b4ea17a5b8873b24676",
       measurementId: "G-8P0HBKVY00"
     };
-  
-    // Initialize Firebase
+
+    // 🔥 Initialize Firebase + Database
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-  </script>
-  
-  <script>
-    // Create Handsontable
+    const db = getDatabase(app);
+
+    // 🔢 Initialize Handsontable
     const container = document.getElementById('sheet');
+    const statusEl = document.getElementById('status');
+
     const hot = new Handsontable(container, {
       data: [
         ['Product', 'Price', 'Quantity', 'Total'],
@@ -74,20 +79,42 @@
       licenseKey: 'non-commercial-and-evaluation'
     });
 
-    // Load data from Firebase
-    const dataRef = db.ref('sheetData');
-    dataRef.on('value', (snapshot) => {
+    // 📡 Reference to your data node
+    const dataRef = ref(db, 'sheetData');
+
+    // 🟢 Load existing data from Firebase
+    onValue(dataRef, (snapshot) => {
       if (snapshot.exists()) {
         hot.loadData(snapshot.val());
+        setStatus('Synced');
+      } else {
+        setStatus('No data found (new sheet)');
       }
     });
 
-    // Save data to Firebase on every change
+    // 🟡 Save changes to Firebase
+    let saveTimeout;
     hot.addHook('afterChange', (changes, source) => {
-      if (source !== 'loadData' && changes) {
-        dataRef.set(hot.getData());
-      }
+      if (source === 'loadData' || !changes) return;
+
+      setStatus('Saving...');
+      clearTimeout(saveTimeout);
+
+      saveTimeout = setTimeout(() => {
+        set(dataRef, hot.getData())
+          .then(() => setStatus('Synced'))
+          .catch(() => setStatus('Error saving'));
+      }, 1000);
     });
+
+    // 💬 Status helper
+    function setStatus(text) {
+      statusEl.textContent = text;
+      if (text === 'Synced') statusEl.style.background = '#2ecc71';
+      else if (text === 'Saving...') statusEl.style.background = '#f1c40f';
+      else if (text === 'Error saving') statusEl.style.background = '#e74c3c';
+      else statusEl.style.background = '#555';
+    }
   </script>
 
 </body>
