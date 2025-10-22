@@ -3,22 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Spreadsheet with Firebase</title>
+  <title>OECT-Model Overview</title>
 
-  <!-- Handsontable CSS + JS -->
+  <!-- Handsontable CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.js"></script>
 
   <style>
     body {
       font-family: system-ui, sans-serif;
       margin: 40px;
-      background: #f7f7f7;
+      background: #f9f9f9;
     }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+    }
+
     #sheet {
-      width: 800px;
-      margin: auto;
+      width: 900px; /* Adjust width as needed */
+      margin-top: 10px;
+      position: relative;
     }
+
     #status {
       position: fixed;
       bottom: 20px;
@@ -34,14 +41,15 @@
 </head>
 <body>
 
-  <h1>📊 Interactive Spreadsheet (Synced via Firebase)</h1>
+  <h1>📊 OECT-Model Overview</h1>
   <div id="sheet"></div>
   <div id="status">Connecting...</div>
 
+  <!-- Firebase SDK (modular) -->
   <script type="module">
-    // ✅ Import Firebase modular SDK
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+    import { getDatabase } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+    import { setupSpreadsheet } from "./spreadsheet.js";
 
     // 🔑 Your Firebase config
     const firebaseConfig = {
@@ -55,66 +63,12 @@
       measurementId: "G-8P0HBKVY00"
     };
 
-    // 🔥 Initialize Firebase + Database
+    // 🔥 Initialize Firebase and Database
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 🔢 Initialize Handsontable
-    const container = document.getElementById('sheet');
-    const statusEl = document.getElementById('status');
-
-    const hot = new Handsontable(container, {
-      data: [
-        ['Product', 'Price', 'Quantity', 'Total'],
-        ['Apples', 1.2, 10, '=B2*C2'],
-        ['Oranges', 0.8, 12, '=B3*C3'],
-        ['Bananas', 1.0, 5, '=B4*C4']
-      ],
-      rowHeaders: true,
-      colHeaders: true,
-      formulas: true,
-      dropdownMenu: true,
-      contextMenu: true,
-      filters: true,
-      licenseKey: 'non-commercial-and-evaluation'
-    });
-
-    // 📡 Reference to your data node
-    const dataRef = ref(db, 'sheetData');
-
-    // 🟢 Load existing data from Firebase
-    onValue(dataRef, (snapshot) => {
-      if (snapshot.exists()) {
-        hot.loadData(snapshot.val());
-        setStatus('Synced');
-      } else {
-        setStatus('No data found (new sheet)');
-      }
-    });
-
-    // 🟡 Save changes to Firebase
-    let saveTimeout;
-    hot.addHook('afterChange', (changes, source) => {
-      if (source === 'loadData' || !changes) return;
-
-      setStatus('Saving...');
-      clearTimeout(saveTimeout);
-
-      saveTimeout = setTimeout(() => {
-        set(dataRef, hot.getData())
-          .then(() => setStatus('Synced'))
-          .catch(() => setStatus('Error saving'));
-      }, 1000);
-    });
-
-    // 💬 Status helper
-    function setStatus(text) {
-      statusEl.textContent = text;
-      if (text === 'Synced') statusEl.style.background = '#2ecc71';
-      else if (text === 'Saving...') statusEl.style.background = '#f1c40f';
-      else if (text === 'Error saving') statusEl.style.background = '#e74c3c';
-      else statusEl.style.background = '#555';
-    }
+    // 🎯 Initialize the spreadsheet
+    setupSpreadsheet(db);
   </script>
 
 </body>
