@@ -60,16 +60,10 @@ export function setupSpreadsheet(db) {
   const hot = new Handsontable(container, {
     data,
     rowHeaders: true,
-    colHeaders: ['Device', 'Model Type', 'Thickness (nm)', 'Mobility (cm²/Vs)', 'Notes'],
-    columns: [
-      { data: 0, width: 150 },
-      { data: 1, width: 120 },
-      { data: 2, type: 'numeric', width: 130 },
-      { data: 3, type: 'numeric', width: 160 },
-      { data: 4, width: 300 }
-    ],
-    manualColumnResize: true, // allows user to resize columns
-    stretchH: 'none', // keep your manual widths
+    colHeaders: data[0], // use first row of data as column headers
+    columns: data[0].map(() => ({})), // generate columns config based on data
+    manualColumnResize: true,
+    stretchH: 'none',
     dropdownMenu: true,
     contextMenu: true,
     filters: true,
