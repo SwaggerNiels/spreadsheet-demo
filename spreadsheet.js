@@ -1,3 +1,10 @@
+import Handsontable from "https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.esm.js";
+import {
+  ref,
+  onValue,
+  set
+} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+
 import {
   ref,
   onValue,
