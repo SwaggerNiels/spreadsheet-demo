@@ -5,12 +5,6 @@ import {
   set
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
 
-import {
-  ref,
-  onValue,
-  set
-} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
-
 // Exported setup function
 export function setupSpreadsheet(db) {
   const container = document.getElementById('sheet');
