@@ -29,7 +29,7 @@ export function setupSpreadsheet(db) {
     [
       'Robinson',
       '2006',
-      'Robinson, Nathaniel D., Per-Olof Svensson, David Nilsson, and Magnus Berggren. “On the Current Saturation Observed in Electrochemical Polymer Transistors.” Journal of The Electrochemical Society 153, no. 3 (January 24, 2006): H39. https://doi.org/10.1149/1.2172534.',
+      'https://doi.org/10.1149/1.2172534.',
       'Niels',
       'Y',
       '',
@@ -43,7 +43,7 @@ export function setupSpreadsheet(db) {
     [
       'Bernards',
       '2007',
-      'Bernards, D. A., and G. G. Malliaras. “Steady-State and Transient Behavior of Organic Electrochemical Transistors.” Advanced Functional Materials 17, no. 17 (2007): 3538–44. https://doi.org/10.1002/adfm.200601239.',
+      'https://doi.org/10.1002/adfm.200601239.',
       'Niels',
       'Y',
       '',
@@ -56,12 +56,29 @@ export function setupSpreadsheet(db) {
     ]
   ];
 
+  // Custom renderer for clickable links
+  function linkRenderer(instance, td, row, col, prop, value, cellProperties) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    
+    if (value && typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://') || value.includes('doi.org'))) {
+      td.innerHTML = `<a href="${value}" target="_blank" style="color: #0066cc; text-decoration: underline;">${value}</a>`;
+    }
+    
+    return td;
+  }
+
   // Handsontable instance
   const hot = new Handsontable(container, {
     data,
     rowHeaders: true,
     colHeaders: data[0], // use first row of data as column headers
-    columns: data[0].map(() => ({})), // generate columns config based on data
+    columns: data[0].map((header, index) => {
+      // Make the "Link" column (index 2) clickable
+      if (index === 2) {
+        return { renderer: linkRenderer };
+      }
+      return {};
+    }),
     manualColumnResize: true,
     stretchH: 'none',
     dropdownMenu: true,
