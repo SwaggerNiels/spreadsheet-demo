@@ -18,10 +18,48 @@ export function setupSpreadsheet(db) {
 
   // Example starting data
   const data = [
-    ['Device', 'Model Type', 'Thickness (nm)', 'Mobility (cm²/Vs)', 'Notes'],
-    ['Sample A', 'P-type', 100, 1.23, 'Stable response'],
-    ['Sample B', 'N-type', 80, 0.89, 'Degradation observed'],
-    ['Sample C', 'P-type', 120, 1.05, 'Excellent reproducibility']
+    [
+      'First Author',
+      'Year',
+      'Link',
+      'Pizza point',
+      'Done',
+      '',
+      'Review',
+      'Modelable',
+      'Model base',
+      'Spatial (1D vs 2D) complexity',
+      'Temporal complexity (S: Steady State, T: Transient)',
+      'Form (closed-form, ODE, PDE, numerical)'
+    ],
+    [
+      'Robinson',
+      '2006',
+      'Robinson, Nathaniel D., Per-Olof Svensson, David Nilsson, and Magnus Berggren. “On the Current Saturation Observed in Electrochemical Polymer Transistors.” Journal of The Electrochemical Society 153, no. 3 (January 24, 2006): H39. https://doi.org/10.1149/1.2172534.',
+      'Niels',
+      'Y',
+      '',
+      'N',
+      'Y',
+      'Electrochemistry',
+      '1D',
+      'S',
+      'closed-form'
+    ],
+    [
+      'Bernards',
+      '2007',
+      'Bernards, D. A., and G. G. Malliaras. “Steady-State and Transient Behavior of Organic Electrochemical Transistors.” Advanced Functional Materials 17, no. 17 (2007): 3538–44. https://doi.org/10.1002/adfm.200601239.',
+      'Niels',
+      'Y',
+      '',
+      'N',
+      'Y',
+      'Transistor device physics',
+      '1D',
+      'S, T',
+      'closed-form'
+    ]
   ];
 
   // Handsontable instance
